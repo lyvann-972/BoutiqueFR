@@ -76,9 +76,13 @@ class OrderController extends AbstractController
             $delivery_content .= '<br>'.$delivery->getPostal().' '.$delivery->getCity();
             $delivery_content .= '<br>'.$delivery->getCountry();
 
+            $order = new Order();
+            $reference = $date->format('dmY').'-'.uniqid();
+            $order->setReference($reference);
+
             // dd($delivery_content);
 
-            // dd($carriers);
+            
 
             // Enregistrer ma commande Order()
             $order->setUser($this->getUser());
@@ -99,7 +103,7 @@ class OrderController extends AbstractController
             $this->entityManager->persist($order);
 
             // Pour chaque produit que j'ai dans mon panier
-            $products_for_stripe = [];
+            // $products_for_stripe = [];
 
             foreach($cart->getFull() as $product){
 
@@ -113,50 +117,23 @@ class OrderController extends AbstractController
                
                 // Fige la data
                 $this->entityManager->persist($orderDetails);
-                $products_for_stripe[] = [
-
-                    'price_data' => [
-                        'currency' => 'eur',
-                        'unit_amount' => ($product['product']->getPrice()),
-                        'product_data' => [
-                            'name' => ($product['product']->getName()),
-                            'images' => ["https://i.imgur.com/EHyR2nP.png0"],
-                        ],
-                ],
-                'quantity' => ($product['product']->getPrice() * $product['quantity'])
-
-                ];
+                
 
             }
-
-                // $this->entityManager->flush();
+                
+                $this->entityManager->flush();
+                // dd($order);
 
                 // STRIP fait le lien entre la banque et notre site :D
 
-                Stripe::setApiKey('sk_test_51LieLtLv8IqE4Bc33y5pBGo6yAejtL8r2dWK2dYNIWdtsoberogQoaAVJUR87Eo2P8qWvpjQbkLGvpHqoWmv8CQC002PvXPEkR');
-
-
-                $YOUR_DOMAIN = 'http://127.0.0.1:8000/';
-
-                $checkout_session = Session::create([
-                    'payment_method_types' => ['card'],
-                    'line_items' => [
-                        $products_for_stripe
-                         ],
-                    'mode' => 'payment',
-                    'success_url' => $YOUR_DOMAIN . '/success.html',
-                    'cancel_url' => $YOUR_DOMAIN . '/cancel.html',
-                  ]);
-    
-                    
-                    // dump($checkout_session->id);
-                    // dd($checkout_session);
+                
            
             return $this->render('order/add.html.twig', [
                 'cart' => $cart->getFull(),
                 'carrier' => $carriers,
                 'delivery' => $delivery_content,
-                'srtip_checkout_session'=>$checkout_session->id
+                'reference'=>$order->getReference()
+                
             ]);
             
         }
